@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/io.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,13 +17,77 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Chat App',
-      home: HomeScreen(),
+      home: GetGroupNameScreen(),
+    );
+  }
+}
+
+class GetGroupNameScreen extends StatefulWidget {
+  const GetGroupNameScreen({super.key});
+
+  @override
+  State<GetGroupNameScreen> createState() => _GetGroupNameScreenState();
+}
+
+class _GetGroupNameScreenState extends State<GetGroupNameScreen> {
+  late final TextEditingController groupNameController;
+
+  @override
+  void initState() {
+    groupNameController = TextEditingController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    groupNameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Room Name'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(30.0),
+        child: Column(
+          children: <Widget>[
+            TextField(
+              controller: groupNameController,
+              decoration: const InputDecoration(labelText: 'Room Name'),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                if (groupNameController.text.trim().isEmpty == true) {
+                  return;
+                } else {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (cntxt) {
+                        return HomeScreen(
+                          groupName: groupNameController.text.trim(),
+                        );
+                      },
+                    ),
+                  );
+                }
+              },
+              child: const Text('Connect The Room'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final String groupName;
+  const HomeScreen({super.key, required this.groupName});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -40,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
     messageController = TextEditingController();
     _scrollController = ScrollController();
     count = 0;
-    connectToWsServer();
+    connectToWsServer(widget.groupName);
     super.initState();
   }
 
@@ -56,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat App'),
+        title: Text('Room name: "${widget.groupName}"'),
       ),
       body: Center(
         child: Padding(
@@ -83,9 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemBuilder: (cntxt, index) {
                           return Card(
                             elevation: 7,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(data[index]['userMessage']),
+                            child: ListTile(
+                              title: Text(data[index]['userMessage']),
+                              subtitle: const Text('anonymous user'),
                             ),
                           );
                         },
@@ -128,10 +193,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void connectToWsServer() {
+  void connectToWsServer(String groupName) {
     try {
-      channel =
-          WebSocketChannel.connect(Uri.parse('ws://10.0.2.2:8000/chat/abc/'));
+      channel = IOWebSocketChannel.connect(
+        Uri.parse('ws://10.0.2.2:8000/chat/$groupName/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkwNDE3NjM1LCJpYXQiOjE2OTA0MTQ2MzUsImp0aSI6ImJmODgwNjUzMWVjZTRhYzk4YjE5YjBiMmEyOTQxOTM1IiwidXNlcl9pZCI6MX0.QkFS_xTsekkYkhDIpD_21aOoIiV81FqbX_jDQeZO7fE'
+        },
+      );
     } catch (error) {
       print(error);
     }
