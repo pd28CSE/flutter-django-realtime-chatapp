@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 
@@ -95,18 +96,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final WebSocketChannel channel;
-  late final TextEditingController messageController;
-  final List<String> messages = [];
-  late int count;
+  final TextEditingController messageController = TextEditingController();
   late final ScrollController _scrollController;
 
   @override
   void initState() {
-    messageController = TextEditingController();
     _scrollController = ScrollController();
-    count = 0;
-    connectToWsServer(widget.groupName);
     super.initState();
+    connectToWsServer(widget.groupName);
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {});
   }
 
   @override
@@ -146,17 +144,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                         itemCount: data.length,
                         itemBuilder: (cntxt, index) {
+                          log(data.toString());
                           return Card(
                             elevation: 7,
                             child: ListTile(
                               title: Text(data[index]['userMessage']),
-                              subtitle: const Text('anonymous user'),
+                              subtitle: Text(data[index]['username']),
                             ),
                           );
                         },
                       );
                     } else if (snapshot.hasError) {
-                      print(snapshot.error.toString());
+                      log(snapshot.error.toString());
                       return Text(snapshot.error.toString());
                     }
 
@@ -200,11 +199,11 @@ class _HomeScreenState extends State<HomeScreen> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkwNDE3NjM1LCJpYXQiOjE2OTA0MTQ2MzUsImp0aSI6ImJmODgwNjUzMWVjZTRhYzk4YjE5YjBiMmEyOTQxOTM1IiwidXNlcl9pZCI6MX0.QkFS_xTsekkYkhDIpD_21aOoIiV81FqbX_jDQeZO7fE'
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkzNjQzNjI2LCJpYXQiOjE2OTM2NDMzMjYsImp0aSI6IjM1ZjMxZDZmMTc3YzQ2MGJhYTBmMDk0NTEzMmYxMjNmIiwidXNlcl9pZCI6MX0.VtZz31xGYx1fNqRmEUW0tAs8eTCvsO1h8kvRHbgs4gA'
         },
       );
     } catch (error) {
-      print(error);
+      log(error.toString());
     }
   }
 
